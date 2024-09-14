@@ -3,7 +3,7 @@ module Main where
 import Prelude
 
 import Control.Monad.Except (ExceptT)
-import Data.Array (filter, intercalate, sortBy)
+import Data.Array (filter, sortBy)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Identity (Identity)
@@ -25,7 +25,38 @@ import JS.Fetch.RequestBody as RB
 import Web.DOM.Document (createElement)
 import Web.DOM.Element (Element, setAttribute)
 import Web.DOM.Element as EL
-import Web.DOM.Node (appendChild, firstChild, ownerDocument, removeChild, setTextContent)
+import Web.DOM.Node (appendChild, childNodes, ownerDocument, removeChild, setTextContent)
+import Web.DOM.NodeList (toArray)
+import Web.HTML (window)
+import Web.HTML.HTMLDocument (HTMLDocument, body, documentElement, setTitle, toDocument)
+import Web.HTML.HTMLElement as HEL
+import Web.HTML.HTMLHtmlElement as HHEL
+import Web.HTML.Window (document)
+import Yoga.JSON (class ReadForeign, class WriteForeign, readImpl, unsafeStringify, writeImpl)
+import Control.Monad.Except (ExceptT)
+import Data.Array (filter, sortBy)
+import Data.Either (Either(..))
+import Data.Foldable (for_)
+import Data.Identity (Identity)
+import Data.List.NonEmpty (NonEmptyList)
+import Data.Maybe (Maybe(..))
+import Effect (Effect)
+import Effect.Aff (Aff, attempt, launchAff_)
+import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
+import Effect.Now (now)
+import Effect.Ref (new, write)
+import Effect.Timer (setInterval, clearInterval)
+import Fetch (Method(..), fetch)
+import Fetch.Internal.RequestBody (class ToRequestBody)
+import Fetch.Yoga.Json (fromJSON)
+import Foreign (Foreign, ForeignError)
+import Foreign.Index (readProp)
+import JS.Fetch.RequestBody as RB
+import Web.DOM.Document (createElement)
+import Web.DOM.Element (Element, setAttribute)
+import Web.DOM.Element as EL
+import Web.DOM.Node (appendChild, ownerDocument, setTextContent)
 import Web.HTML (window)
 import Web.HTML.HTMLDocument (HTMLDocument, body, documentElement, setTitle, toDocument)
 import Web.HTML.HTMLElement as HEL
@@ -106,8 +137,6 @@ fetchInventoryFromJson = do
     Left err -> pure $ Left $ "Fetch error: " <> show err
     Right inventory -> pure $ Right $ InventoryData inventory
 
-
--- Fetch inventory data via HTTP POST request using Fetch and fromJSON
 fetchInventoryFromHttp :: Aff (Either String InventoryResponse)
 fetchInventoryFromHttp = do
   result <- attempt do
@@ -124,7 +153,6 @@ fetchInventoryFromHttp = do
     Left err -> pure $ Left $ "Fetch error: " <> show err
     Right msg -> pure $ Right $ Message msg
 
--- Sorting and configuration types
 data SortField = SortByName | SortByPrice | SortByQuantity
 data SortOrder = Ascending | Descending
 
@@ -151,18 +179,10 @@ compareMenuItems config (MenuItem item1) (MenuItem item2) =
       Ascending -> baseComparison
       Descending -> invertOrdering baseComparison
 
--- Helper function to clear an element's content
+-- Updated clearElement function using setInnerHTML
 clearElement :: Element -> Effect Unit
 clearElement element = do
-  let node = EL.toNode element
-  let removeChildren = do
-        maybeChild <- firstChild node
-        case maybeChild of
-          Nothing -> pure unit
-          Just child -> do
-            _ <- removeChild node child
-            removeChildren
-  removeChildren
+  setInnerHTML "" element
 
 -- Helper function to append an item element
 appendItemElement :: Element -> MenuItem -> Effect Unit
@@ -171,40 +191,56 @@ appendItemElement parent (MenuItem { name, price, quantity }) = do
   case maybeDoc of
     Just doc -> do
       itemElement <- createElement "div" doc
-      let text = name <> " | $" <> show price <> " | x" <> show quantity
-      setTextContent text (EL.toNode itemElement)
-      appendChild (EL.toNode itemElement) (EL.toNode parent)
+      -- Set class or style to make it appear as a block
+      setAttribute "class" "menu-item" itemElement
+      setAttribute "style" "border: 1px solid black; padding: 10px; margin: 5px; display: block; color: black;" itemElement
+
+      -- Create content for the item
+      let content = name <> " | $" <> show price <> " | x" <> show quantity
+      setTextContent content (EL.toNode itemElement)
+
+      -- Append the item element to the parent
+      appendChild (EL.toNode parent) (EL.toNode itemElement)
+      log $ "Appended itemElement to parent: " <> name
     Nothing -> log "Error: Could not get ownerDocument of parent element."
 
 -- Rendering inventory
--- renderInventory :: Config -> Inventory -> Element -> Effect Unit
--- renderInventory config (Inventory items) parent = do
---   log "Rendering inventory"
---   clearElement parent
+renderInventory :: Config -> Inventory -> Element -> Effect Unit
+renderInventory config (Inventory items) parent = do
+  log "Rendering inventory"
+  clearElement parent
 
---   let filteredItems = if config.hideOutOfStock
---         then filter (\(MenuItem item) -> item.quantity > 0) items
---         else items
+  let filteredItems = if config.hideOutOfStock
+        then filter (\(MenuItem item) -> item.quantity > 0) items
+        else items
 
---   let sortedItems = sortBy (compareMenuItems config) filteredItems
+  let sortedItems = sortBy (compareMenuItems config) filteredItems
 
---   for_ sortedItems (appendItemElement parent)
+  for_ sortedItems (appendItemElement parent)
 
-renderInventory :: Config -> Inventory -> String
-renderInventory config (Inventory items) =
-  let
-    filteredItems = if config.hideOutOfStock
-      then filter (\(MenuItem item) -> item.quantity > 0) items
-      else items
+-- Function to render error messages
+renderErrorMessage :: String -> Element -> Effect Unit
+renderErrorMessage errMsg parent = do
+  maybeDoc <- ownerDocument (EL.toNode parent)
+  case maybeDoc of
+    Just doc -> do
+      errorElement <- createElement "div" doc
+      setAttribute "class" "error-message" errorElement
+      setTextContent errMsg (EL.toNode errorElement)
+      appendChild (EL.toNode parent) (EL.toNode errorElement)
+    Nothing -> log "Error: Could not get ownerDocument of parent element."
 
-    sortedItems = sortBy (compareMenuItems config) filteredItems
-    itemStrings = map (\(MenuItem { name, price, quantity }) ->
-      name <> " | $" <> show price <> " | x" <> show quantity) sortedItems
-  in
-    intercalate "\n" itemStrings
+renderMessage :: String -> Element -> Effect Unit
+renderMessage msg parent = do
+  maybeDoc <- ownerDocument (EL.toNode parent)
+  case maybeDoc of
+    Just doc -> do
+      messageElement <- createElement "div" doc
+      setAttribute "class" "message" messageElement
+      setTextContent msg (EL.toNode messageElement)
+      appendChild (EL.toNode parent) (EL.toNode messageElement)
+    Nothing -> log "Error: Could not get ownerDocument of parent element."
 
-
--- Corrected showBodyError function
 showBodyError :: HTMLDocument -> Effect Unit
 showBodyError doc = do
   setTitle "Could not load document." doc
@@ -213,7 +249,7 @@ showBodyError doc = do
   rootMaybe <- documentElement doc
   case rootMaybe of
     Just root -> do
-      _ <- appendChild (EL.toNode div) (HHEL.toNode root)
+      _ <- appendChild (HHEL.toNode root) (EL.toNode div) -- Corrected order
       pure unit
     Nothing -> log "No root element found; cannot append error message."
 
@@ -228,7 +264,7 @@ app = do
       let document = toDocument doc
       div <- createElement "div" document
       setAttribute "id" "app" div
-      appendChild (EL.toNode div) (HEL.toNode bodyElement)
+      appendChild (HEL.toNode bodyElement) (EL.toNode div)
       log "Appended div to body"
 
       let config =
@@ -255,16 +291,16 @@ app = do
               Left err -> do
                 log ("Error loading inventory: " <> err)
                 clearElement div
-                setTextContent ("Error loading inventory: " <> err) (EL.toNode div)
+                renderErrorMessage ("Error loading inventory: " <> err) div
               Right res -> do
                 log ("Fetched data: " <> show res)
                 case res of
                   InventoryData inventory -> do
                     write inventory currentInventory
-                    setTextContent (renderInventory config inventory) (EL.toNode div)
+                    renderInventory config inventory div
                   Message msg -> do
                     clearElement div
-                    setTextContent msg (EL.toNode div)
+                    renderMessage msg div
 
       -- Call renderInventoryEvent immediately
       renderInventoryEvent
