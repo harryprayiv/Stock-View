@@ -1,0 +1,26 @@
+package:
+  name: budview
+  dependencies:
+    - aff
+    - affjax
+    - arrays
+    - console
+    - deku
+    - effect
+    - either
+    - fetch
+    - fetch-yoga-json
+    - lists
+    - maybe
+    - prelude
+    - transformers
+    - tuples
+    - web-html
+    - yoga-json
+  test:
+    main: Test.Main
+    dependencies: []
+workspace:
+  packageSet:
+    registry: 57.2.0
+  extraPackages: {}
