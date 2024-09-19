@@ -2,7 +2,6 @@ package:
   name: budview
   dependencies:
     - aff
-    - affjax
     - arrays
     - console
     - deku
@@ -10,11 +9,10 @@ package:
     - either
     - fetch
     - fetch-yoga-json
-    - lists
+    - hyrule
     - maybe
     - prelude
-    - transformers
-    - tuples
+    - safely
     - web-html
     - yoga-json
   test:
@@ -22,5 +20,5 @@ package:
     dependencies: []
 workspace:
   packageSet:
-    registry: 57.2.0
+    registry: 60.0.0
   extraPackages: {}

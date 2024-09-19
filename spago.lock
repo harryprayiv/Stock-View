@@ -5,7 +5,6 @@ workspace:
       core:
         dependencies:
           - aff
-          - affjax
           - arrays
           - console
           - deku
@@ -13,17 +12,14 @@ workspace:
           - either
           - fetch
           - fetch-yoga-json
-          - lists
+          - hyrule
           - maybe
           - prelude
-          - transformers
-          - tuples
+          - safely
           - web-html
           - yoga-json
         build_plan:
           - aff
-          - affjax
-          - argonaut-core
           - arraybuffer-types
           - arrays
           - bifunctors
@@ -51,8 +47,8 @@ workspace:
           - foldable-traversable
           - foreign
           - foreign-object
-          - form-urlencoded
           - free
+          - freet
           - functions
           - functors
           - gen
@@ -67,7 +63,6 @@ workspace:
           - js-promise
           - js-promise-aff
           - js-timers
-          - js-uri
           - lazy
           - lcg
           - lists
@@ -90,6 +85,7 @@ workspace:
           - record
           - refs
           - safe-coerce
+          - safely
           - st
           - strings
           - stringutils
@@ -110,7 +106,6 @@ workspace:
           - web-storage
           - web-streams
           - web-uievents
-          - web-xhr
           - yoga-json
           - yoga-tree
       test:
@@ -118,13 +113,13 @@ workspace:
         build_plan: []
   package_set:
     address:
-      registry: 57.2.0
+      registry: 60.0.0
     compiler: ">=0.15.15 <0.16.0"
     content:
       abc-parser: 2.0.1
       ace: 9.1.0
       address-rfc2821: 0.1.1
-      aff: 7.1.0
+      aff: 8.0.0
       aff-bus: 6.0.0
       aff-coroutines: 9.0.0
       aff-promise: 4.0.0
@@ -183,7 +178,7 @@ workspace:
       classnames: 2.0.0
       codec: 6.1.0
       codec-argonaut: 10.0.0
-      codec-json: 1.2.0
+      codec-json: 2.0.0
       colors: 7.0.1
       concur-core: 0.5.0
       concur-react: 0.5.0
@@ -286,7 +281,7 @@ workspace:
       halogen-css: 10.0.0
       halogen-echarts-simple: 0.0.4
       halogen-formless: 4.0.3
-      halogen-helix: 1.0.0
+      halogen-helix: 1.0.1
       halogen-hooks: 0.6.3
       halogen-hooks-extra: 0.9.0
       halogen-infinite-scroll: 1.1.0
@@ -440,12 +435,12 @@ workspace:
       pointed-list: 0.5.1
       polymorphic-vectors: 4.0.0
       posix-types: 6.0.0
-      postgresql: 2.0.17
+      postgresql: 2.0.19
       precise: 6.0.0
       precise-datetime: 7.0.0
       prelude: 6.0.1
       prettier-printer: 3.0.0
-      priority-queue: 0.1.0
+      priority-queue: 0.1.2
       profunctor: 6.0.1
       profunctor-lenses: 8.0.0
       protobuf: 4.3.0
@@ -517,7 +512,7 @@ workspace:
       soundfonts: 4.1.0
       sparse-matrices: 2.0.1
       sparse-polynomials: 3.0.1
-      spec: 7.6.1
+      spec: 8.0.0
       spec-discovery: 8.3.0
       spec-mocha: 5.1.1
       spec-node: 0.0.1
@@ -627,10 +622,9 @@ workspace:
 packages:
   aff:
     type: registry
-    version: 7.1.0
-    integrity: sha256-7hOC6uQO9XBAI5FD8F33ChLjFAiZVfd4BJMqlMh7TNU=
+    version: 8.0.0
+    integrity: sha256-5MmdI4+0RHBtSBy+YlU3/Cq4R5W2ih3OaRedJIrVHdk=
     dependencies:
-      - arrays
       - bifunctors
       - control
       - datetime
@@ -647,39 +641,6 @@ packages:
       - tailrec
       - transformers
       - unsafe-coerce
-  affjax:
-    type: registry
-    version: 13.0.0
-    integrity: sha256-blYfaoW4FYIrIdvmT4sB7nN7BathFaEfZuiVLPmHJOo=
-    dependencies:
-      - aff
-      - argonaut-core
-      - arraybuffer-types
-      - foreign
-      - form-urlencoded
-      - http-methods
-      - integers
-      - media-types
-      - nullable
-      - refs
-      - unsafe-coerce
-      - web-xhr
-  argonaut-core:
-    type: registry
-    version: 7.0.0
-    integrity: sha256-RC82GfAjItydxrO24cdX373KHVZiLqybu19b5X8u7B4=
-    dependencies:
-      - arrays
-      - control
-      - either
-      - foreign-object
-      - functions
-      - gen
-      - maybe
-      - nonempty
-      - prelude
-      - strings
-      - tailrec
   arraybuffer-types:
     type: registry
     version: 3.0.2
@@ -1032,18 +993,6 @@ packages:
       - tuples
       - typelevel-prelude
       - unfoldable
-  form-urlencoded:
-    type: registry
-    version: 7.0.0
-    integrity: sha256-WUzk8DTjrbPVHKZ5w7XpPBO6ci6xFhvYguHp6RvX+18=
-    dependencies:
-      - foldable-traversable
-      - js-uri
-      - maybe
-      - newtype
-      - prelude
-      - strings
-      - tuples
   free:
     type: registry
     version: 7.1.0
@@ -1063,6 +1012,21 @@ packages:
       - transformers
       - tuples
       - unsafe-coerce
+  freet:
+    type: registry
+    version: 7.0.0
+    integrity: sha256-zkL6wU4ZPq8xz1kGFxoliWqyhBksepMJTyA68VEBaJo=
+    dependencies:
+      - aff
+      - bifunctors
+      - effect
+      - either
+      - exists
+      - free
+      - prelude
+      - tailrec
+      - transformers
+      - tuples
   functions:
     type: registry
     version: 6.0.0
@@ -1231,13 +1195,6 @@ packages:
     integrity: sha256-znHWLSSOYw15P5DTcsAdal2lf7nGA2yayLdOZ2t5r7o=
     dependencies:
       - effect
-  js-uri:
-    type: registry
-    version: 3.1.0
-    integrity: sha256-3p0ynHveCJmC2CXze+eMBdW/2l5e953Q8XMAKz+jxUo=
-    dependencies:
-      - functions
-      - maybe
   lazy:
     type: registry
     version: 6.0.0
@@ -1460,6 +1417,13 @@ packages:
     integrity: sha256-a1ibQkiUcbODbLE/WAq7Ttbbh9ex+x33VCQ7GngKudU=
     dependencies:
       - unsafe-coerce
+  safely:
+    type: registry
+    version: 4.0.1
+    integrity: sha256-GkGocIS80Qt/gWeOHzBQYJjsdY0UDRxwisgxQmSSKqM=
+    dependencies:
+      - freet
+      - lists
   st:
     type: registry
     version: 6.2.0
@@ -1655,17 +1619,6 @@ packages:
     version: 5.0.0
     integrity: sha256-5I+ut9JYno3wowti3vJGs1afKCm1ucppKuy+zhuSyss=
     dependencies:
-      - web-html
-  web-xhr:
-    type: registry
-    version: 5.0.1
-    integrity: sha256-3dbIPVG66S+hPrgEVnpD78hrGjE7qlBbsReWOz89Ios=
-    dependencies:
-      - arraybuffer-types
-      - datetime
-      - http-methods
-      - web-dom
-      - web-file
       - web-html
   yoga-json:
     type: registry

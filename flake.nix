@@ -57,7 +57,7 @@
           concurrent
         ];
         text = ''
-          npm install &&
+          # npm install &&
           concurrent "spago-watch build" vite
         '';
       };
