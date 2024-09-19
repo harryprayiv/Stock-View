@@ -18,17 +18,14 @@ import Foreign.Index (readProp)
 import JS.Fetch.RequestBody as RB
 import Yoga.JSON (class ReadForeign, class WriteForeign, readImpl, unsafeStringify, writeImpl)
 
--- Define the unified result type
 data InventoryResponse
   = InventoryData Inventory
   | Message String
 
 newtype ForeignRequestBody = ForeignRequestBody Foreign
 
--- Define Inventory as a newtype
 newtype Inventory = Inventory (Array MenuItem)
 
--- Define MenuItem with 'species' instead of 'type'
 newtype MenuItem = MenuItem
   { name :: String
   , category :: String
@@ -39,11 +36,9 @@ newtype MenuItem = MenuItem
   , quantity :: Int
   }
 
--- WriteForeign instance for MenuItem
 instance writeForeignMenuItem :: WriteForeign MenuItem where
   writeImpl (MenuItem item) = writeImpl item
 
--- ReadForeign instance for MenuItem
 instance readForeignMenuItem :: ReadForeign MenuItem where
   readImpl json = do
     name <- readProp "name" json >>= readImpl
@@ -55,18 +50,15 @@ instance readForeignMenuItem :: ReadForeign MenuItem where
     quantity <- readProp "quantity" json >>= readImpl
     pure $ MenuItem { name, category, subcategory, species, sku, price, quantity }
 
--- ToRequestBody instance for ForeignRequestBody
 instance ToRequestBody ForeignRequestBody where
   toRequestBody (ForeignRequestBody foreignValue) =
     RB.fromString (unsafeStringify foreignValue)
 
--- ReadForeign instance for Inventory
 instance readForeignInventory :: ReadForeign Inventory where
   readImpl json = do
     items <- readImpl json :: ExceptT (NonEmptyList ForeignError) Identity (Array MenuItem)
     pure (Inventory items)
 
--- Show instance for MenuItem
 instance showMenuItem :: Show MenuItem where
   show (MenuItem item) =
     "MenuItem { name: " <> show item.name <>
@@ -77,11 +69,9 @@ instance showMenuItem :: Show MenuItem where
     ", price: " <> show item.price <>
     ", quantity: " <> show item.quantity <> " }"
 
--- Show instance for Inventory
 instance showInventory :: Show Inventory where
   show (Inventory items) = "Inventory " <> show items
 
--- Show instance for InventoryResponse
 instance showInventoryResponse :: Show InventoryResponse where
   show (InventoryData inventory) = "InventoryData " <> show inventory
   show (Message msg) = "Message " <> show msg
@@ -99,7 +89,6 @@ fetchInventoryFromJson = do
     Left err -> pure $ Left $ "Fetch error: " <> show err
     Right inventory -> pure $ Right $ InventoryData inventory
 
--- Fetch inventory data via HTTP POST request using Fetch and fromJSON
 fetchInventoryFromHttp :: Aff (Either String InventoryResponse)
 fetchInventoryFromHttp = do
   result <- attempt do
