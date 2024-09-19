@@ -9,9 +9,9 @@ import Data.Either (Either(..))
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple.Nested ((/\))
 import Deku.Attributes (klass_)
-import Deku.Control (text)
+import Deku.Control (text, text_)
 import Deku.Core (Nut(..))
-import Deku.DOM (text_, text)
+import Deku.DOM (text)
 import Deku.DOM as D
 import Deku.Do as Deku
 import Deku.Hooks (useDyn, useState)
@@ -81,10 +81,10 @@ renderInventory config (Inventory items) = D.dir
       else items
     sortedItems = sortBy (compareMenuItems config) filteredItems
 
-renderItem :: Config -> Inventory -> Element -> Effect Unit
+renderItem :: MenuItem -> Nut
 renderItem (MenuItem item) = D.div
   [ klass_ "inventory-item" ]
-  [ D.div [] [ text_ ("Name: " <> item.name) ]
+  [ D.div [] [ text_ ("Name: " <> item.name)]
   , D.div [] [ text_ ("Category: " <> item.category) ]
   , D.div [] [ text_ ("Subcategory: " <> item.subcategory) ]
   , D.div [] [ text_ ("Species: " <> item.species) ]
