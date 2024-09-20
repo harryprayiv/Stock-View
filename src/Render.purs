@@ -6,37 +6,20 @@ import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), fetchInvento
 import Control.Monad.Rec.Class (forever)
 import Data.Array (filter, sortBy)
 import Data.Either (Either(..))
-import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple.Nested ((/\))
 import Deku.Attributes (klass_)
-import Deku.Control (text, text_)
+import Deku.Control (text_)
 import Deku.Core (Nut(..))
-import Deku.DOM (text)
 import Deku.DOM as D
 import Deku.Do as Deku
 import Deku.Hooks (useDyn, useState)
 import Deku.Toplevel (runInBody)
 import Effect (Effect)
-import Effect.Aff (Aff, attempt, delay, launchAff_)
+import Effect.Aff (Aff, launchAff_, delay)
 import Effect.Aff.Class (liftAff)
-import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Effect.Now (now)
-import Effect.Ref (new, write)
-import Effect.Timer (setInterval, clearInterval)
-import Fetch (fetch)
-import Fetch.Yoga.Json (fromJSON)
-import Foreign (Foreign, ForeignError)
-import Foreign.Index (readProp)
-import Web.DOM.Document (createElement)
-import Web.DOM.Element (Element, setAttribute)
-import Web.DOM.Element as EL
-import Web.DOM.Node (appendChild, firstChild, ownerDocument, removeChild, setTextContent)
-import Web.HTML (window)
-import Web.HTML.HTMLDocument (HTMLDocument, body, documentElement, setTitle, toDocument)
-import Web.HTML.HTMLElement as HEL
-import Web.HTML.Window (document)
-import Yoga.JSON (class ReadForeign, readImpl)
+import Effect.Timer (setInterval)
+import Effect.Class (liftEffect)
 
 -- Sorting Configuration
 data SortField = SortByName | SortByCategory | SortBySubCategory | SortByPrice | SortByQuantity
@@ -69,10 +52,9 @@ compareMenuItems config (MenuItem item1) (MenuItem item2) =
       Ascending -> baseComparison
       Descending -> invertOrdering baseComparison
 
--- Deku render functions
-renderInventory :: Config -> Inventory -> Element -> Effect Unit
--- renderInventory :: Config -> Inventory -> Effect Unit 
-renderInventory config (Inventory items) = D.dir
+-- Rendering functions using Deku
+renderInventory :: Config -> Inventory -> Nut
+renderInventory config (Inventory items) = D.div
   [ klass_ "inventory" ]
   (map renderItem sortedItems)
   where
@@ -94,8 +76,8 @@ renderItem (MenuItem item) = D.div
   ]
 
 -- Poll function for fetching inventory periodically
-fetchInventoryPoll :: Effect Unit (Aff (Either String InventoryResponse)) (Aff (Either String InventoryResponse))
-fetchInventoryPoll = \_ -> pure $ fetchInventoryFromJson
+fetchInventoryPoll :: Aff (Either String InventoryResponse)
+fetchInventoryPoll = fetchInventoryFromJson
 
 app :: Effect Unit
 app = void runInBody Deku.do
@@ -111,7 +93,7 @@ app = void runInBody Deku.do
 
   -- Function to fetch inventory periodically
   liftAff $ launchAff_ $ do
-    setInterval (Milliseconds 3000.0) $ do 
+    setInterval 3000 $ do -- 3000 ms interval
       result <- fetchInventoryPoll
       case result of
         Left err -> log ("Error: " <> err)
