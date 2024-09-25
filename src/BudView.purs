@@ -18,18 +18,14 @@ import Foreign.Index (readProp)
 import JS.Fetch.RequestBody as RB
 import Yoga.JSON (class ReadForeign, readImpl, unsafeStringify, writeImpl)
 
--- ForeignRequestBody to wrap Foreign
 newtype ForeignRequestBody = ForeignRequestBody Foreign
 
--- Define InventoryResponse type
 data InventoryResponse
   = InventoryData Inventory
   | Message String
 
--- Define Inventory as a newtype
 newtype Inventory = Inventory (Array MenuItem)
 
--- Define MenuItem as a newtype over a record
 newtype MenuItem = MenuItem
   { name :: String
   , category :: String

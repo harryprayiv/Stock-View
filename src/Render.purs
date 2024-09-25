@@ -10,13 +10,13 @@ import Deku.Core (Nut(..), text_)
 import Deku.DOM as D
 import Deku.DOM.Attributes (klass_)
 import Deku.Do as Deku
-import Deku.Effect (useState)
-import Deku.Hooks (useDyn)
+import Deku.Hooks (useState)
 import Deku.Toplevel (runInBody)
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff)
+import Effect.Aff (Aff, Fiber, error, killFiber, launchAff, never)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
+import Effect.Ref as Ref
 import FRP.Event.Time (interval')
 
 -- Sorting Configuration
@@ -73,44 +73,61 @@ renderItem (MenuItem item) = D.div
   , D.div [] [ text_ ("Quantity: " <> show item.quantity) ]
   ]
 
--- Switch between Local JSON and HTTP Fetch
-fetchInventory :: String -> Aff (Either String InventoryResponse)
-fetchInventory mode = do
-  log "Fetching inventory..."
+-- Custom hook to fetch inventory and update state in Aff context
+fetchInventoryAff :: (Inventory -> Effect Unit) -> String -> Aff Unit
+fetchInventoryAff setInventory mode = do
+  liftEffect $ log "Fetching inventory..."
   result <- case mode of
     "json" -> fetchInventoryFromJson
     "http" -> fetchInventoryFromHttp
     _ -> pure $ Left "Invalid mode"
-  pure result
+  
+  case result of
+    Left err -> liftEffect $ log ("Error fetching inventory: " <> err)
+    Right (InventoryData inv) -> liftEffect $ setInventory inv
+    _ -> pure unit
 
 app :: Effect Unit
-app = void $ runInBody Deku.do
-  -- Initialize inventory state
-  setInventory /\ inventory <- useState (Inventory [])
+app = do
+  -- Create a reference to store the fiber so it can be killed if necessary
+  initialFiber <- launchAff never  -- Create a never-ending fiber to use as initial value
+  fiberRef <- Ref.new initialFiber
 
-  let config =
-        { sortField: SortByCategory
-        , sortOrder: Ascending
-        , hideOutOfStock: true
-        , screens: 1
-        }
+  runInBody Deku.do
+    -- Initialize inventory state
+    setInventory /\ inventory <- useState (Inventory [])
 
-  -- Start polling for inventory updates every 3000ms using liftEffect
-  launchAff $ do
-    void $ interval' (liftEffect (pollInventory setInventory)) 3000
+    let config =
+          { sortField: SortByCategory
+          , sortOrder: Ascending
+          , hideOutOfStock: true
+          , screens: 1
+          }
 
-  -- Render inventory when it changes
-  do
-    { value: inv } <- useDyn inventory
-    renderInventory config inv
-    pure unit
+    -- Set up polling with `interval'` to fetch inventory every 3000ms
+    unsubscribe <- interval' (withInventoryPoll fiberRef setInventory) 3000
+
+    -- Render inventory when it changes
+    renderInventory config inventory
+
+    -- Return a function to clean up the interval when the component is destroyed
+    pure $ do
+      log "Cleaning up polling"
+      unsubscribe
 
   where
-    pollInventory :: (Inventory -> Effect Unit) -> Aff Unit
-    pollInventory setInventory = do
-      let mode = "json"  -- Switch between "json" and "http"
-      result <- fetchInventory mode
-      case result of
-        Left err -> log ("Error: " <> err)
-        Right (InventoryData inv) -> liftEffect $ setInventory inv
-        _ -> pure unit
+  -- This function handles the polling and fiber management for fetching inventory
+  withInventoryPoll :: Ref.Ref (Fiber Unit) -> (Inventory -> Effect Unit) -> Effect Unit
+  withInventoryPoll fiberRef setInventory = do
+    -- Kill any existing fiber before starting a new one
+    existingFiber <- Ref.read fiberRef
+    killFiber (error "Cancelling previous fiber") existingFiber
+
+    -- Launch a new fiber to fetch the inventory (launching Aff from Effect context)
+    launchNewFiber fiberRef setInventory
+
+  -- This launches the new `Aff` fiber from the `Effect` context
+  launchNewFiber :: Ref.Ref (Fiber Unit) -> (Inventory -> Effect Unit) -> Effect Unit
+  launchNewFiber fiberRef setInventory = do
+    newFiber <- launchAff $ fetchInventoryAff setInventory "json"
+    Ref.write newFiber fiberRef
