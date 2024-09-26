@@ -4,7 +4,53 @@ import Prelude
 
 import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), fetchInventoryFromJson, fetchInventoryFromHttp)
 import Data.Array (filter, sortBy)
+import Data.Compactable (compact)
+import Data.Compactable (compact)
+import Data.DateTime.Instant (Instant, unInstant)
 import Data.Either (Either(..))
+import Data.Either (Either(..), hush)
+import Data.Int (round)
+import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
+import Data.Op (Op(..))
+import Data.Op (Op)
+import Data.Time.Duration (Milliseconds)
+import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple, fst, snd)
+import Data.Tuple.Nested ((/\))
+import Deku.Core (Nut(..), text_)
+import Deku.DOM as D
+import Deku.DOM.Attributes (klass_)
+import Deku.Do as Deku
+import Deku.Hooks (useState)
+import Deku.Toplevel (runInBody)
+import Effect (Effect)
+import Effect (Effect)
+import Effect.Aff (Aff, Fiber, error, killFiber, launchAff, launchAff_, never)
+import Effect.Aff (launchAff_)
+import Effect.Aff.AVar as Avar
+import Effect.Aff.Class (liftAff)
+import Effect.Class (liftEffect)
+import Effect.Class (liftEffect)
+import Effect.Class.Console (log, logShow)
+import Effect.Now (now)
+import Effect.Ref as Ref
+import Effect.Timer (TimeoutId)
+import Effect.Timer (TimeoutId, clearInterval, setInterval, setTimeout)
+import FRP.Event (Event, makeEventE, mapAccum)
+import FRP.Event (subscribe)
+import FRP.Event.Random (withRandom)
+-- import FRP.Event.Time (interval')
+import Safe.Coerce (coerce)
+import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), fetchInventoryFromJson, fetchInventoryFromHttp)
+import Data.Array (filter, sortBy)
+import Data.Compactable (compact)
+import Data.Either (Either(..), hush)
+import Data.Int (round)
+import Data.Tuple (snd)
+import Data.Newtype (unwrap)
+import Data.Op (Op(..))
+import Data.Time.Duration (Milliseconds)
 import Data.Tuple.Nested ((/\))
 import Deku.Core (Nut(..), text_)
 import Deku.DOM as D
@@ -18,7 +64,28 @@ import Effect.Aff.Class (liftAff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Ref as Ref
-import FRP.Event.Time (interval')
+import Effect.Timer (TimeoutId, clearInterval, setInterval, setTimeout)
+import FRP.Event (Event, subscribe)
+import FRP.Event.Random (withRandom)
+import FRP.Event.Time (interval)
+
+withDelay' :: forall a. (a -> Int) -> Op (Effect Unit) (Either TimeoutId (Tuple TimeoutId a)) -> Op (Effect Unit) a
+withDelay' nf = (coerce :: (_ -> a -> _ Unit) -> _ -> _) go
+  where
+  go f value = launchAff_ do
+    tid <- Avar.empty
+    o <- liftEffect $ setTimeout (nf value) $ launchAff_ do
+      t <- Avar.read tid
+      liftEffect $ f (Right (Tuple t value))
+    Avar.put o tid
+    liftEffect $ f (Left o)
+
+interval' :: forall a. (Op (Effect Unit) a -> Op (Effect Unit) Instant) -> Int -> Effect { event :: Event a, unsubscribe :: Effect Unit }
+interval' f n = makeEventE \k -> do
+  id <- setInterval n do
+    time <- now
+    (coerce :: _ -> _ -> _ -> _ Unit) f k time
+  pure (clearInterval id)
 
 -- Sorting Configuration
 data SortField = SortByName | SortByCategory | SortBySubCategory | SortByPrice | SortByQuantity
@@ -111,16 +178,22 @@ app = do
           , screens: 1
           }
 
-    -- Set up polling with `interval'` to fetch inventory every 3000ms
-    unsubscribe <- interval' (\_ -> withInventoryPoll fiberRef setInventory) 3000
+    -- Set up polling with `interval'`, using random delays and event stream mapping
+    let opChain =
+          withDelay' (\_ -> 3000)  -- Delay function can be tuned or randomized
+          >>> withRandom
+
+    -- Create interval event stream
+    { event } <- interval' (\k _ -> opChain k) 3000
+
+    -- Process the event stream and filter compacted results
+    let resultStream = map snd $ compact $ map hush event
+
+    -- Subscribe to the event stream to trigger inventory polling
+    void $ subscribe resultStream (\_ -> withInventoryPoll fiberRef setInventory)
 
     -- Render inventory when it changes
     renderInventory config inventory
-
-    -- Return a function to clean up the interval when the component is destroyed
-    pure $ do
-      log "Cleaning up polling"
-      unsubscribe
 
   where
   -- This function handles the polling and fiber management for fetching inventory
