@@ -14,6 +14,7 @@ import Deku.Hooks (useState)
 import Deku.Toplevel (runInBody)
 import Effect (Effect)
 import Effect.Aff (Aff, Fiber, error, killFiber, launchAff, never)
+import Effect.Aff.Class (liftAff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Ref as Ref
@@ -87,6 +88,12 @@ fetchInventoryAff setInventory mode = do
     Right (InventoryData inv) -> liftEffect $ setInventory inv
     _ -> pure unit
 
+-- Launching the Aff in the Effect context
+launchNewFiber :: Ref.Ref (Fiber Unit) -> (Inventory -> Effect Unit) -> Effect Unit
+launchNewFiber fiberRef setInventory = do
+  newFiber <- launchAff $ fetchInventoryAff setInventory "json"
+  Ref.write newFiber fiberRef
+
 app :: Effect Unit
 app = do
   -- Create a reference to store the fiber so it can be killed if necessary
@@ -105,7 +112,7 @@ app = do
           }
 
     -- Set up polling with `interval'` to fetch inventory every 3000ms
-    unsubscribe <- interval' (withInventoryPoll fiberRef setInventory) 3000
+    unsubscribe <- interval' (\_ -> withInventoryPoll fiberRef setInventory) 3000
 
     -- Render inventory when it changes
     renderInventory config inventory
@@ -121,13 +128,7 @@ app = do
   withInventoryPoll fiberRef setInventory = do
     -- Kill any existing fiber before starting a new one
     existingFiber <- Ref.read fiberRef
-    killFiber (error "Cancelling previous fiber") existingFiber
+    liftAff $ killFiber (error "Cancelling previous fiber") existingFiber
 
-    -- Launch a new fiber to fetch the inventory (launching Aff from Effect context)
+    -- Launch a new fiber to fetch the inventory
     launchNewFiber fiberRef setInventory
-
-  -- This launches the new `Aff` fiber from the `Effect` context
-  launchNewFiber :: Ref.Ref (Fiber Unit) -> (Inventory -> Effect Unit) -> Effect Unit
-  launchNewFiber fiberRef setInventory = do
-    newFiber <- launchAff $ fetchInventoryAff setInventory "json"
-    Ref.write newFiber fiberRef
