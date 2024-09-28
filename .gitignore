@@ -1,4 +1,5 @@
 /_build/
+/script/
 /cover/
 /deps/
 /doc/
@@ -12,4 +13,3 @@ output/
 output-es/
 generated-docs/
 .psc-package/
-/script/
