@@ -1,89 +1,84 @@
 {
-  description = "budview";
-
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-unstable";
-    purescript-overlay = {
-      url = "github:harryprayiv/purescript-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    flake-compat.url = "github:edolstra/flake-compat";
-    flake-compat.flake = false;
+    utils.url = "github:ursi/flake-utils";
   };
 
-  outputs = { self, nixpkgs, purescript-overlay, ... }: let
+  outputs = { self, nixpkgs, utils, ... } @ inputs: let
     name = "budview";
-    supportedSystems = [
+    systems = [
       "aarch64-darwin"
       "x86_64-darwin"
       "x86_64-linux"
     ];
+    pkgs = nixpkgs.legacyPackages.x86_64-linux;
+  in
+    utils.apply-systems
+    {
+      inherit inputs systems;
+    }
+    ({
+      system,
+      pkgs,
+      ...
+    }: let
+      elixir = pkgs.elixir_1_14;  # Specify the version of Elixir you want
+      nodejs = pkgs.nodejs-18_x;  # Node.js LTS version 18
+      postgresql = pkgs.postgresql_15;  # PostgreSQL version 15
 
-    forAllSystems = f: nixpkgs.lib.genAttrs supportedSystems (system: f system);
-  in {
-    devShell = forAllSystems (system: let
-      overlays = [
-        purescript-overlay.overlays.default
-      ];
-      pkgs = import nixpkgs { inherit system overlays; };
+      # Shell applications like Phoenix server, Vite, etc.
+      phoenix_server = pkgs.writeShellApplication {
+        name = "phoenix-server";
+        runtimeInputs = with pkgs; [ elixir nodejs postgresql ];
+        text = ''
+          mix deps.get
+          mix phx.server
+        '';
+      };
+
       vite = pkgs.writeShellApplication {
         name = "vite";
-        runtimeInputs = with pkgs; [ nodejs-slim ];
+        runtimeInputs = with pkgs; [ nodejs ];
         text = "npx vite --open";
       };
-      concurrent = pkgs.writeShellApplication {
-        name = "concurrent";
-        runtimeInputs = with pkgs; [ concurrently ];
-        text = ''
-          concurrently\
-            --color "auto"\
-            --prefix "[{command}]"\
-            --handle-input\
-            --restart-tries 10\
-            "$@"
-        '';
-      };
-      spago-watch = pkgs.writeShellApplication {
-        name = "spago-watch";
-        runtimeInputs = with pkgs; [ entr spago-unstable ];
-        text = ''find {src,test} | entr -s "spago $*" '';
-      };
-      dev = pkgs.writeShellApplication {
-        name = "dev";
-        runtimeInputs = with pkgs; [
-          nodejs-slim
-          spago-watch
-          vite
-          concurrent
-        ];
-        text = ''
-          # npm install &&
-          concurrent "spago-watch build" vite
-        '';
-      };
-    in
-      pkgs.mkShell {
-        inherit name;
-        shellHook = ''
-          echo "Available commands: dev"
-        '';
-        buildInputs = [
-            pkgs.esbuild
-            pkgs.nodejs_20
-            pkgs.nixpkgs-fmt
-            pkgs.purs
-            pkgs.purs-tidy
-            pkgs.purs-backend-es
-            pkgs.purescript-language-server
-            pkgs.spago-unstable
+
+    in rec {
+      devShells.default =
+        pkgs.mkShell {
+          inherit name;
+          packages = with pkgs; [
+            elixir
+            nodejs
+            postgresql
+            git
+          ];
+
+          buildInputs = with pkgs; [
+            elixir
+            nodejs
+            postgresql
+          ];
+
+          # Shell Hook for any environment setup
+          shellHook = ''
+            export PGDATA="$PWD/db"
+            echo "PostgreSQL data directory set to $PGDATA"
+            echo "Welcome to the Elixir development shell!"
+          '';
+
+          # Custom commands available in the shell
+          shellTools = [
+            phoenix_server
             vite
-            dev
-            ]
-            ++ (pkgs.lib.optionals (system == "aarch64-darwin")
-              (with pkgs.darwin.apple_sdk.frameworks; [
-                Cocoa
-                CoreServices
-              ]));
-      });
-  };
+          ];
+        };
+
+      # Define apps like live-server if needed
+      apps = {
+        phoenix = {
+          type = "app";
+          program = "${phoenix_server}/bin/phoenix-server";
+        };
+      };
+    });
 }
