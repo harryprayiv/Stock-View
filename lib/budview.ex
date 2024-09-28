@@ -6,7 +6,6 @@ defmodule MyApp.Inventory.Inventory do
   defstruct items: []
 end
 
-
 defmodule MyApp.InventoryFetcher do
   alias MyApp.Inventory.{MenuItem, Inventory}
 
@@ -33,7 +32,6 @@ defmodule MyApp.InventoryFetcher do
   end
 end
 
-
 defmodule MyAppWeb.InventoryLive do
   use Phoenix.LiveView
   alias MyApp.InventoryFetcher
@@ -41,10 +39,18 @@ defmodule MyAppWeb.InventoryLive do
 
   def mount(_params, _session, socket) do
     send(self(), :load_inventory)
+    schedule_poll()
     {:ok, assign(socket, inventory: %Inventory{items: []}, config: default_config())}
   end
 
   def handle_info(:load_inventory, socket) do
+    case InventoryFetcher.fetch_inventory_from_json() do
+      {:ok, inventory} -> {:noreply, assign(socket, :inventory, inventory)}
+      {:error, reason} -> {:noreply, put_flash(socket, :error, "Error loading inventory: #{reason}")}
+    end
+  end
+
+  def handle_info(:poll_inventory, socket) do
     case InventoryFetcher.fetch_inventory_from_json() do
       {:ok, inventory} -> {:noreply, assign(socket, :inventory, inventory)}
       {:error, reason} -> {:noreply, put_flash(socket, :error, "Error loading inventory: #{reason}")}
@@ -65,21 +71,37 @@ defmodule MyAppWeb.InventoryLive do
     sorted_items = if order == :descending, do: Enum.reverse(items), else: items
     %Inventory{inventory | items: sorted_items}
   end
-end
 
-
-def mount(_params, _session, socket) do
-  schedule_poll()
-  {:ok, assign(socket, inventory: %Inventory{items: []}, config: default_config())}
-end
-
-def handle_info(:poll_inventory, socket) do
-  case InventoryFetcher.fetch_inventory_from_json() do
-    {:ok, inventory} -> {:noreply, assign(socket, :inventory, inventory)}
-    {:error, reason} -> {:noreply, put_flash(socket, :error, "Error loading inventory: #{reason}")}
+  defp schedule_poll do
+    Process.send_after(self(), :poll_inventory, 5000)  # Poll every 5 seconds
   end
 end
 
-defp schedule_poll do
-  Process.send_after(self(), :poll_inventory, 5000)  # Poll every 5 seconds
+
+defmodule MyAppWeb do
+  def live_view do
+    quote do
+      use Phoenix.LiveView,
+        layout: {MyAppWeb.LayoutView, "live.html"}
+      unquote(view_helpers())
+    end
+  end
+
+  def live_component do
+    quote do
+      use Phoenix.LiveComponent
+      unquote(view_helpers())
+    end
+  end
+
+  defp view_helpers do
+    quote do
+      use Phoenix.HTML
+
+      import Phoenix.LiveView.Helpers
+      import MyAppWeb.ErrorHelpers
+      import MyAppWeb.Gettext
+      alias MyAppWeb.Router.Helpers, as: Routes
+    end
+  end
 end

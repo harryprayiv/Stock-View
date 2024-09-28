@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>MyApp</title>
+  <%= csrf_meta_tag() %>
+  <%= live_title_tag assigns[:page_title] || "MyApp", suffix: " · MyApp" %>
+  <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/assets/app.css") %>">
+</head>
+<body>
+  <%= @inner_content %>
+  <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/assets/app.js") %>"></script>
+</body>
+</html>
