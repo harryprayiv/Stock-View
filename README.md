@@ -1,4 +1,4 @@
-# BudviewLive
+# Budview
 
 To start your Phoenix server:
 
