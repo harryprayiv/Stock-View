@@ -1,8 +1,13 @@
 /_build/
 /script/
 /cover/
+/priv/
+/config/
+/assets/
 /deps/
 /doc/
+/.nix-mix/
+/.nix-hex/
 /.fetch
 erl_crash.dump
 *.ez

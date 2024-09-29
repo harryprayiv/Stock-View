@@ -1,84 +1,50 @@
 {
+  description = "Budview - Elixir development environment with modular shell and Docker support";
+
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-unstable";
-    utils.url = "github:ursi/flake-utils";
+    flake-utils.url = "github:numtide/flake-utils";  # Ensure correct reference to flake-utils
+    beam-utils = {
+      url = "github:nix-giant/beam-utils";
+      inputs.nixpkgs.follows = "nixpkgs";  # Follows the correct nixpkgs input
+      inputs.flake-utils.follows = "flake-utils";  # Ensure it follows the correct utils reference
+    };
   };
 
-  outputs = { self, nixpkgs, utils, ... } @ inputs: let
-    name = "budview";
-    systems = [
-      "aarch64-darwin"
-      "x86_64-darwin"
-      "x86_64-linux"
-    ];
-    pkgs = nixpkgs.legacyPackages.x86_64-linux;
-  in
-    utils.apply-systems
-    {
-      inherit inputs systems;
-    }
-    ({
-      system,
-      pkgs,
-      ...
-    }: let
-      elixir = pkgs.elixir_1_14;  # Specify the version of Elixir you want
-      nodejs = pkgs.nodejs-18_x;  # Node.js LTS version 18
-      postgresql = pkgs.postgresql_15;  # PostgreSQL version 15
-
-      # Shell applications like Phoenix server, Vite, etc.
-      phoenix_server = pkgs.writeShellApplication {
-        name = "phoenix-server";
-        runtimeInputs = with pkgs; [ elixir nodejs postgresql ];
-        text = ''
-          mix deps.get
-          mix phx.server
-        '';
-      };
-
-      vite = pkgs.writeShellApplication {
-        name = "vite";
-        runtimeInputs = with pkgs; [ nodejs ];
-        text = "npx vite --open";
-      };
-
-    in rec {
-      devShells.default =
-        pkgs.mkShell {
-          inherit name;
-          packages = with pkgs; [
-            elixir
-            nodejs
-            postgresql
-            git
-          ];
-
-          buildInputs = with pkgs; [
-            elixir
-            nodejs
-            postgresql
-          ];
-
-          # Shell Hook for any environment setup
-          shellHook = ''
-            export PGDATA="$PWD/db"
-            echo "PostgreSQL data directory set to $PGDATA"
-            echo "Welcome to the Elixir development shell!"
-          '';
-
-          # Custom commands available in the shell
-          shellTools = [
-            phoenix_server
-            vite
+  outputs = { self, nixpkgs, flake-utils, beam-utils, ... } @ inputs:
+    flake-utils.lib.eachDefaultSystem (
+      system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [
+            beam-utils.overlays.default  # Applying the beam-utils overlay
+            (import ./nix/overlay.nix)  # Custom overlay
           ];
         };
-
-      # Define apps like live-server if needed
-      apps = {
-        phoenix = {
-          type = "app";
-          program = "${phoenix_server}/bin/phoenix-server";
+      in
+      {
+        # Define the development shell
+        devShells = {
+          default = pkgs.myCallPackage ./nix/shell.nix { };
         };
-      };
-    });
+
+        # Packages - Optional future extensions for Docker builds, releases, etc.
+        packages =
+          let
+            release = pkgs.myCallPackage ./nix/release.nix ({ } // inputs);
+
+            buildDockerImage = hostSystem:
+              pkgs.myCallPackage ./nix/docker-image.nix ({ inherit release hostSystem; } // inputs);
+
+            dockerImages = builtins.listToAttrs (
+              map (hostSystem: {
+                name = "docker-image-triggered-by-${hostSystem}";
+                value = buildDockerImage hostSystem;
+              }) flake-utils.lib.defaultSystems
+            );
+          in
+          { inherit release; } // dockerImages;
+      }
+    );
 }
