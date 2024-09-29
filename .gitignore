@@ -3,6 +3,7 @@
 /cover/
 /priv/
 /config/
+/.lexical/
 /assets/
 /deps/
 /doc/
