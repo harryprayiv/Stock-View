@@ -11,3 +11,4 @@ generated-docs/
 .psa*
 .spago
 /script/
+/.vscode/
