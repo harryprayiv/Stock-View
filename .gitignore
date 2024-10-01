@@ -19,3 +19,4 @@ output/
 output-es/
 generated-docs/
 .psc-package/
+/.spago/
