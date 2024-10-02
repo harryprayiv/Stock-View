@@ -24,6 +24,8 @@ data InventoryResponse
   = InventoryData Inventory
   | Message String
 
+data QueryMode = JsonMode | HttpMode
+
 newtype Inventory = Inventory (Array MenuItem)
 
 newtype MenuItem = MenuItem
@@ -55,6 +57,11 @@ instance readForeignInventory :: ReadForeign Inventory where
   readImpl json = do
     items <- readImpl json :: ExceptT (NonEmptyList ForeignError) Identity (Array MenuItem)
     pure (Inventory items)
+
+fetchInventory :: QueryMode -> Aff (Either String InventoryResponse)
+fetchInventory mode = case mode of
+  JsonMode -> fetchInventoryFromJson
+  HttpMode -> fetchInventoryFromHttp
 
 -- Fetch Inventory from Local JSON
 fetchInventoryFromJson :: Aff (Either String InventoryResponse)

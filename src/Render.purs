@@ -2,7 +2,7 @@ module Render where
 
 import Prelude
 
-import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), fetchInventoryFromJson, fetchInventoryFromHttp)
+import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), QueryMode(..), fetchInventory, fetchInventoryFromHttp, fetchInventoryFromJson)
 import Data.Array (filter, sortBy)
 import Data.Either (Either(..))
 import Data.Functor (void)
@@ -10,15 +10,18 @@ import Data.Tuple.Nested ((/\))
 import Deku.Core (Nut(..), text_)
 import Deku.DOM as D
 import Deku.DOM.Attributes (klass_)
+import Deku.DOM.SVG.Attributes (mode)
 import Deku.Do as Deku
-import Deku.Hooks (useState, (<#~>))
+import Deku.Hooks (useState, useState', (<#~>))
 import Deku.Toplevel (runInBody)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Effect.Timer (setInterval)
-
+import FRP.Event (subscribe)
+import FRP.Event.Class (fold)
+import FRP.Event.Time (interval)
+import FRP.Poll (Poll, step)
 
 -- Sorting Configuration
 data SortField = SortByName | SortByCategory | SortBySubCategory | SortByPrice | SortByQuantity
@@ -28,6 +31,8 @@ type Config =
   { sortField :: SortField
   , sortOrder :: SortOrder
   , hideOutOfStock :: Boolean
+  , mode :: QueryMode
+  , refreshRate :: Int
   , screens :: Int
   }
 
@@ -50,7 +55,6 @@ compareMenuItems config (MenuItem item1) (MenuItem item2) =
       Ascending -> baseComparison
       Descending -> invertOrdering baseComparison
 
--- Rendering functions using Deku
 renderInventory :: Config -> Inventory -> Nut
 renderInventory config (Inventory items) = D.div
   [ klass_ "inventory" ]
@@ -73,37 +77,37 @@ renderItem (MenuItem item) = D.div
   , D.div [] [ text_ ("Quantity: " <> show item.quantity) ]
   ]
 
--- Fetch inventory and update state
-fetchInventoryAff :: (Inventory -> Effect Unit) -> String -> Aff Unit
-fetchInventoryAff setInventory mode = do
-  result <- case mode of
-    "json" -> fetchInventoryFromJson
-    "http" -> fetchInventoryFromHttp
-    _ -> pure $ Left "Invalid mode"
-
-  case result of
-    Left err -> liftEffect $ log ("Error fetching inventory: " <> err)
-    Right (InventoryData inv) -> liftEffect $ setInventory inv
-    Right (Message msg) -> liftEffect $ log ("Message: " <> msg)
-
 app :: Effect Unit
-app = do
-  -- Initialize inventory state
-  setInventory /\ inventoryPoll <- useState (Inventory [])
-
-  -- Perform an initial fetch
-  launchAff_ $ fetchInventoryAff setInventory "json"
-
-  -- Set up the interval
-  void $ setInterval 3000 $ do
-    launchAff_ $ fetchInventoryAff setInventory "json"
-
-  -- Run the UI
-  runInBody $ D.div [] [ inventoryPoll <#~> renderInventory config ]
-  where
+app = runInBody $ Deku.do
+  let
     config =
       { sortField: SortByCategory
       , sortOrder: Ascending
       , hideOutOfStock: true
+      , mode: JsonMode
+      , refreshRate: 3000
       , screens: 1
       }
+
+  -- Initialize inventory state using useState
+  setInventory /\ inventory <- useState (Inventory [])
+
+  -- Helper function to fetch and update inventory
+  let fetchAndUpdateInventory = do
+        result <- fetchInventory config.mode
+        liftEffect $ case result of
+          Left err -> log ("Error fetching inventory: " <> err)
+          Right (InventoryData inv) -> setInventory inv
+          Right (Message msg) -> log ("Message: " <> msg)
+
+  -- Perform an initial fetch
+  _ <- liftEffect $ launchAff_ fetchAndUpdateInventory
+
+  -- Set up the interval using config.refreshRate
+  _ <- liftEffect do
+    { event: tickEvent, unsubscribe } <- interval config.refreshRate
+    void $ subscribe tickEvent \_ -> do
+      launchAff_ fetchAndUpdateInventory
+
+  -- Render inventory when it changes (this must be the last expression)
+  pure $ D.div [] [ inventory <#~> renderInventory config ]
