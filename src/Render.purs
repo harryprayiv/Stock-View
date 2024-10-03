@@ -20,7 +20,14 @@ import FRP.Event (subscribe)
 import FRP.Event.Time (interval)
 
 -- Sorting Configuration
-data SortField = SortByName | SortByCategory | SortBySubCategory | SortByPrice | SortByQuantity
+data SortField =  SortByName 
+                | SortByCategory 
+                | SortBySubCategory 
+                | SortBySpecies
+                | SortBySKU
+                | SortByPrice 
+                | SortByQuantity
+
 data SortOrder = Ascending | Descending
 
 type Config =
@@ -44,6 +51,8 @@ compareMenuItems config (MenuItem item1) (MenuItem item2) =
       SortByName -> compare item1.name item2.name
       SortByCategory -> compare item1.category item2.category
       SortBySubCategory -> compare item1.subcategory item2.subcategory
+      SortBySpecies -> compare item1.species item2.species
+      SortBySKU -> compare item1.sku item2.sku
       SortByPrice -> compare item1.price item2.price
       SortByQuantity -> compare item1.quantity item2.quantity
   in
@@ -78,8 +87,8 @@ app = do
   setInventory /\ inventory <- useState (Inventory [])
   let
     config =
-      { sortField: SortByCategory
-      , sortOrder: Ascending
+      { sortField: SortByQuantity
+      , sortOrder: Descending
       , hideOutOfStock: true
       , mode: JsonMode
       , refreshRate: 3000
