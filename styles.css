@@ -24,24 +24,24 @@
 
 /* Dynamic species-specific styles */
 .species-indica {
-  border-left: 4px solid #610fae; /* Green for Indica */
+  border-left: 5px solid #b25fff; /* Green for Indica */
 }
 
 .species-sativa {
-  border: 4px solid #ff9900; /* Orange for Sativa */
+  border-left: 5px solid #ff6600; /* Orange for Sativa */
 }
 
 .species-hybrid {
-  border: 5px solid #00fff2; /* Blue for Hybrid */
+  border-left: 5px solid #7db190; /* Blue for Hybrid */
 }
 
 /* Dynamic category-specific styles */
 .category-flower {
-  background-color: #070707; /* Light grey for Flower */
+  background-color: #a68888; /* Light grey for Flower */
 }
 
 .category-vape {
-  background-color: #000000; /* Light orange for Vape */
+  background-color: #64817ccf; /* Light orange for Vape */
 }
 
 /* Dynamic subcategory-specific styles */
@@ -56,13 +56,13 @@
 /* Text styling for inventory items */
 .item-name {
   font-weight: bold;
-  color: rgb(149, 255, 255);
-  margin-bottom: 8px;
+  color: rgb(217, 229, 146);
+  margin-bottom: 2px;
 }
 
 .item-price {
   font-weight: bold;
-  color: rgb(38, 255, 111);
+  color: rgb(120, 255, 165);
   margin-bottom: 8px;
 }
 

@@ -27,5 +27,5 @@
     { "name": "Lemonenon Stene", "species": "Indica", "category": "Vape",  "subcategory": "Live Rosin", "sku": "25df1f1c-81af-4564-8591-16a0aaef1f1d", "price": 10, "quantity": 1 },
     { "name": "Stoner 5", "species": "Hybrid", "category": "Vape",  "subcategory": "Live Resin", "sku": "edca0eec-b5c6-4759-a648-103dcca69e91", "price": 30, "quantity": 1 },
     { "name": "Interlocuter", "species": "Indica", "category": "Vape",  "subcategory": "Live Resin", "sku": "9f2a8646-4f1c-42da-a47a-5ff0c64870eb", "price": 30, "quantity": 1 },
-    { "name": "Somnambulist", "species": "Indica", "category": "Vape",  "subcategory": "Live Resin", "sku": "956a3897-4bb7-42fc-bafb-fa463c422fe4", "price": 35, "quantity": 1 }
+    { "name": "Somnambulist", "species": "Indica", "category": "Vape",  "subcategory": "Live Resin", "sku": "956a3897-4bb7-42fc-bafb-fa463c422fe4", "price": 35, "quantity": 100 }
 ]
