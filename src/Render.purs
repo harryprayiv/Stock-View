@@ -108,13 +108,11 @@ renderInventory config (Inventory items) = D.div
 renderItem :: MenuItem -> Nut
 renderItem (MenuItem item) = D.div
   [ klass_ "inventory-item-card" ]
-  [ D.div [ klass_ "item-name" ] [ text_ ("Name: " <> item.name) ]
-  , D.div [ klass_ "item-category" ] [ text_ ("Category: " <> item.category) ]
-  , D.div [ klass_ "item-subcategory" ] [ text_ ("Subcategory: " <> item.subcategory) ]
-  , D.div [ klass_ "item-species" ] [ text_ ("Species: " <> item.species) ]
-  , D.div [ klass_ "item-sku" ] [ text_ ("SKU: " <> item.sku) ]
-  , D.div [ klass_ "item-price" ] [ text_ ("Price: $" <> show item.price) ]
-  , D.div [ klass_ "item-quantity" ] [ text_ ("Quantity: " <> show item.quantity) ]
+  [ D.div [ klass_ "item-name" ] [ text_ ("'" <> item.name <> "'") ]
+  , D.div [ klass_ "item-category" ] [ text_ (item.category <> " - " <> item.subcategory) ]
+  , D.div [ klass_ "item-species" ] [ text_ ( item.species) ]
+  , D.div [ klass_ "item-price" ] [ text_ ("$" <> show item.price) ]
+  , D.div [ klass_ "item-quantity" ] [ text_ ("In Stock: " <> show item.quantity) ]
   ]
 
 app :: Effect Unit
@@ -122,7 +120,7 @@ app = do
   setInventory /\ inventory <- useState (Inventory [])
   let
     config =
-      { sortField: SortByQuantity
+      { sortField: SortByCategory
       , sortOrder: Descending
       , hideOutOfStock: true
       , mode: JsonMode
