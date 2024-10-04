@@ -1,0 +1,35 @@
+/* Inventory grid layout */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  /* Individual item card styling */
+  .inventory-item-card {
+    border: 1px solid #ccc;
+    padding: 16px;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  /* Hover effect for item card */
+  .inventory-item-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Text styling for inventory items */
+  .item-name {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-bottom: 8px;
+  }
+  
+  .item-category, .item-subcategory, .item-species, .item-sku, .item-price, .item-quantity {
+    margin: 4px 0;
+  }
+  

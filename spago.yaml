@@ -6,7 +6,9 @@ package:
     - affjax-web
     - arrays
     - console
+    - css
     - deku-core
+    - deku-css
     - deku-dom
     - effect
     - either
@@ -55,6 +57,14 @@ workspace:
         - web-touchevents
         - web-pointerevents
         - untagged-union
+    deku-css:
+      git: "https://github.com/mikesol/purescript-deku.git"
+      ref: "06a06a2908b2a400a0ab9224c8128aa5988e674d"
+      subdir: deku-css
+      dependencies:
+        - deku-core
+        - hyrule
+        - css
     tidy:
       repo: "https://github.com/natefaubion/purescript-tidy.git"
       version: "v0.10.0"

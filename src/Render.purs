@@ -3,6 +3,8 @@ module Render where
 import Prelude
 
 import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), QueryMode(..), fetchInventory)
+import CSS.Color (fromInt)
+import CSS.Color (Color) as CSS
 import Data.Array (filter, sortBy)
 import Data.Either (Either(..))
 import Data.Tuple.Nested ((/\))
@@ -18,6 +20,11 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import FRP.Event (subscribe)
 import FRP.Event.Time (interval)
+ 
+-- needed autoFill, minMax, gap, scale, gridTemplateColumns
+
+red:: CSS.Color
+red = fromInt 0xff0000
 
 -- Sorting Configuration
 data SortField =  SortByName 
@@ -29,6 +36,7 @@ data SortField =  SortByName
                 | SortByQuantity
 
 data SortOrder = Ascending | Descending
+
 
 type Config =
   { sortField :: SortField
@@ -60,9 +68,36 @@ compareMenuItems config (MenuItem item1) (MenuItem item2) =
       Ascending -> baseComparison
       Descending -> invertOrdering baseComparison
 
+-- -- styling sucks with type safety!
+-- gridStyle :: CSS
+-- gridStyle = do
+--   display grid
+--   key (fromString "grid-template-columns") (Value (fromString "repeat(auto-fill, minmax(200px, 1fr))"))  -- Wrap value with Value
+--   key (fromString "gap") (px 16.0)  -- Add gap between grid items
+
+-- -- Define card styles using purescript-css
+-- cardStyle :: CSS
+-- cardStyle = do
+--   display inlineBlock
+--   padding (px 16.0)
+--   border solid (px 1.0)
+--   borderRadius (px 8.0)
+--   -- boxShadow (fromString "0 2px 4px rgba(0, 0, 0, 0.1)")
+--   boxShadow $ singleton $ shadow (px 2.0) (px 4.0)
+--   backgroundColor (fromString "#fff")
+--   width (pct 100.0)
+--   maxWidth (px 300.0)
+--   -- transition (fromString "transform 0.2s, box-shadow 0.2s")
+
+-- -- -- Hover effect for the card
+-- -- hoverCardStyle :: CSS
+-- -- hoverCardStyle = hover do
+-- --   boxShadow (fromString "0 4px 8px rgba(0, 0, 0, 0.2)")
+-- --   transform (scale 1.05)
+
 renderInventory :: Config -> Inventory -> Nut
 renderInventory config (Inventory items) = D.div
-  [ klass_ "inventory" ]
+  [ klass_ "inventory-grid" ]
   (map renderItem sortedItems)
   where
     filteredItems = if config.hideOutOfStock
@@ -72,14 +107,14 @@ renderInventory config (Inventory items) = D.div
 
 renderItem :: MenuItem -> Nut
 renderItem (MenuItem item) = D.div
-  [ klass_ "inventory-item" ]
-  [ D.div [] [ text_ ("Name: " <> item.name)]
-  , D.div [] [ text_ ("Category: " <> item.category) ]
-  , D.div [] [ text_ ("Subcategory: " <> item.subcategory) ]
-  , D.div [] [ text_ ("Species: " <> item.species) ]
-  , D.div [] [ text_ ("SKU: " <> item.sku) ]
-  , D.div [] [ text_ ("Price: $" <> show item.price) ]
-  , D.div [] [ text_ ("Quantity: " <> show item.quantity) ]
+  [ klass_ "inventory-item-card" ]
+  [ D.div [ klass_ "item-name" ] [ text_ ("Name: " <> item.name) ]
+  , D.div [ klass_ "item-category" ] [ text_ ("Category: " <> item.category) ]
+  , D.div [ klass_ "item-subcategory" ] [ text_ ("Subcategory: " <> item.subcategory) ]
+  , D.div [ klass_ "item-species" ] [ text_ ("Species: " <> item.species) ]
+  , D.div [ klass_ "item-sku" ] [ text_ ("SKU: " <> item.sku) ]
+  , D.div [ klass_ "item-price" ] [ text_ ("Price: $" <> show item.price) ]
+  , D.div [ klass_ "item-quantity" ] [ text_ ("Quantity: " <> show item.quantity) ]
   ]
 
 app :: Effect Unit

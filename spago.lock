@@ -9,7 +9,9 @@ workspace:
           - affjax-web
           - arrays
           - console
+          - css
           - deku-core
+          - deku-css
           - deku-dom
           - effect
           - either
@@ -33,12 +35,15 @@ workspace:
           - avar
           - bifunctors
           - catenable-lists
+          - colors
           - console
           - const
           - contravariant
           - control
+          - css
           - datetime
           - deku-core
+          - deku-css
           - deku-dom
           - distributive
           - effect
@@ -70,6 +75,7 @@ workspace:
           - js-timers
           - js-uri
           - lazy
+          - lcg
           - lists
           - literals
           - maybe
@@ -86,6 +92,8 @@ workspace:
           - prelude
           - profunctor
           - psci-support
+          - quickcheck
+          - quickcheck-laws
           - random
           - record
           - refs
@@ -93,6 +101,7 @@ workspace:
           - st
           - strings
           - tailrec
+          - these
           - transformers
           - tuples
           - type-equality
@@ -629,6 +638,14 @@ workspace:
       dependencies:
         - hyrule
         - untagged-union
+    deku-css:
+      git: https://github.com/mikesol/purescript-deku.git
+      ref: 06a06a2908b2a400a0ab9224c8128aa5988e674d
+      subdir: deku-css
+      dependencies:
+        - css
+        - deku-core
+        - hyrule
     deku-dom:
       git: https://github.com/mikesol/purescript-deku.git
       ref: 276f48adde3d9354f61917f7e9ae2ae7b43df6b2
@@ -879,6 +896,17 @@ packages:
       - prelude
       - tuples
       - unfoldable
+  colors:
+    type: registry
+    version: 7.0.1
+    integrity: sha256-udlg/y2PFsHYli8Tgz8BQGGrOjyGo0BcJj36IfgYADs=
+    dependencies:
+      - arrays
+      - integers
+      - lists
+      - numbers
+      - partial
+      - strings
   console:
     type: registry
     version: 6.1.0
@@ -911,6 +939,19 @@ packages:
     dependencies:
       - newtype
       - prelude
+  css:
+    type: registry
+    version: 6.0.0
+    integrity: sha256-zfSHxgiU4rSWuVxMjSKKh+s7j433wxmsr+CqI6hm9s4=
+    dependencies:
+      - colors
+      - console
+      - effect
+      - nonempty
+      - profunctor
+      - strings
+      - these
+      - transformers
   datetime:
     type: registry
     version: 6.1.0
@@ -940,6 +981,15 @@ packages:
     dependencies:
       - hyrule
       - untagged-union
+  deku-css:
+    type: git
+    url: https://github.com/mikesol/purescript-deku.git
+    rev: 06a06a2908b2a400a0ab9224c8128aa5988e674d
+    subdir: deku-css
+    dependencies:
+      - css
+      - deku-core
+      - hyrule
   deku-dom:
     type: git
     url: https://github.com/mikesol/purescript-deku.git
@@ -1299,6 +1349,17 @@ packages:
       - foldable-traversable
       - invariant
       - prelude
+  lcg:
+    type: registry
+    version: 4.0.0
+    integrity: sha256-h7ME5cthLfbgJOJdsZcSfFpwXsx4rf8YmhebU+3iSYg=
+    dependencies:
+      - effect
+      - integers
+      - maybe
+      - partial
+      - prelude
+      - random
   lists:
     type: registry
     version: 7.0.0
@@ -1454,6 +1515,45 @@ packages:
       - console
       - effect
       - prelude
+  quickcheck:
+    type: registry
+    version: 8.0.1
+    integrity: sha256-ZvpccKQCvgslTXZCNmpYW4bUsFzhZd/kQUr2WmxFTGY=
+    dependencies:
+      - arrays
+      - console
+      - control
+      - effect
+      - either
+      - enums
+      - exceptions
+      - foldable-traversable
+      - gen
+      - identity
+      - integers
+      - lazy
+      - lcg
+      - lists
+      - maybe
+      - newtype
+      - nonempty
+      - numbers
+      - partial
+      - prelude
+      - record
+      - st
+      - strings
+      - tailrec
+      - transformers
+      - tuples
+      - unfoldable
+  quickcheck-laws:
+    type: registry
+    version: 7.0.0
+    integrity: sha256-rnzVTiDnymzYkvnhI8EvPwrmO8LgcTnrMTuiI172Tkc=
+    dependencies:
+      - enums
+      - quickcheck
   random:
     type: registry
     version: 6.0.0
@@ -1525,6 +1625,17 @@ packages:
       - partial
       - prelude
       - refs
+  these:
+    type: registry
+    version: 6.0.0
+    integrity: sha256-6poQvFzGw7Ir9mTDEbFV9N6+cUeSHe0FdzTR2ZK1o6g=
+    dependencies:
+      - arrays
+      - gen
+      - lists
+      - quickcheck
+      - quickcheck-laws
+      - tuples
   transformers:
     type: registry
     version: 6.1.0
