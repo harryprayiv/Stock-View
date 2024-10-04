@@ -9,7 +9,6 @@ import Data.Array (filter, sortBy)
 import Data.Either (Either(..))
 import Data.String (Pattern(..), replace, toLower)
 import Data.String.Pattern (Replacement(..))
--- import Data.String.Utils (toCharArray)
 import Data.Tuple.Nested ((/\))
 import Deku.Core (Nut, text_)
 import Deku.DOM as D
@@ -113,7 +112,7 @@ app = do
 
     fetchAndUpdateInventory :: Effect Unit
     fetchAndUpdateInventory = launchAff_ do
-      result <- fetchInventory config.mode
+      result <- fetchInventory config.mode "/inventory.json"
       liftEffect $ case result of
         Left err -> log ("Error fetching inventory: " <> err)
         Right (InventoryData inv) -> setInventory inv

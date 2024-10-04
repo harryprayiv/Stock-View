@@ -58,17 +58,12 @@ instance readForeignInventory :: ReadForeign Inventory where
     items <- readImpl json :: ExceptT (NonEmptyList ForeignError) Identity (Array MenuItem)
     pure (Inventory items)
 
-fetchInventory :: QueryMode -> Aff (Either String InventoryResponse)
-fetchInventory mode = case mode of
-  JsonMode -> fetchInventoryFromJson
-  HttpMode -> fetchInventoryFromHttp
-
--- Fetch Inventory from Local JSON
-fetchInventoryFromJson :: Aff (Either String InventoryResponse)
-fetchInventoryFromJson = do
+-- Fetch Inventory from Local JSON with dynamic file path
+fetchInventoryFromJson :: String -> Aff (Either String InventoryResponse)
+fetchInventoryFromJson filePath = do
   result <- attempt do
     timestamp <- liftEffect $ show <$> now
-    let url = "/inventory.json?t=" <> timestamp
+    let url = filePath <> "?t=" <> timestamp
     liftEffect $ log ("Fetching URL: " <> url)
     
     coreResponse <- fetch url {}
@@ -99,3 +94,9 @@ fetchInventoryFromHttp = do
   case result of
     Left err -> pure $ Left $ "Fetch error: " <> show err
     Right msg -> pure $ Right $ Message msg
+
+-- Dynamic Inventory fetching logic based on QueryMode
+fetchInventory :: QueryMode -> String -> Aff (Either String InventoryResponse)
+fetchInventory mode filePath = case mode of
+  JsonMode -> fetchInventoryFromJson filePath
+  HttpMode -> fetchInventoryFromHttp
