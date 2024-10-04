@@ -21,8 +21,6 @@ import Effect.Class.Console (log)
 import FRP.Event (subscribe)
 import FRP.Event.Time (interval)
  
--- needed autoFill, minMax, gap, scale, gridTemplateColumns
-
 red:: CSS.Color
 red = fromInt 0xff0000
 
@@ -36,7 +34,6 @@ data SortField =  SortByName
                 | SortByQuantity
 
 data SortOrder = Ascending | Descending
-
 
 type Config =
   { sortField :: SortField
@@ -67,33 +64,6 @@ compareMenuItems config (MenuItem item1) (MenuItem item2) =
     case config.sortOrder of
       Ascending -> baseComparison
       Descending -> invertOrdering baseComparison
-
--- -- styling sucks with type safety!
--- gridStyle :: CSS
--- gridStyle = do
---   display grid
---   key (fromString "grid-template-columns") (Value (fromString "repeat(auto-fill, minmax(200px, 1fr))"))  -- Wrap value with Value
---   key (fromString "gap") (px 16.0)  -- Add gap between grid items
-
--- -- Define card styles using purescript-css
--- cardStyle :: CSS
--- cardStyle = do
---   display inlineBlock
---   padding (px 16.0)
---   border solid (px 1.0)
---   borderRadius (px 8.0)
---   -- boxShadow (fromString "0 2px 4px rgba(0, 0, 0, 0.1)")
---   boxShadow $ singleton $ shadow (px 2.0) (px 4.0)
---   backgroundColor (fromString "#fff")
---   width (pct 100.0)
---   maxWidth (px 300.0)
---   -- transition (fromString "transform 0.2s, box-shadow 0.2s")
-
--- -- -- Hover effect for the card
--- -- hoverCardStyle :: CSS
--- -- hoverCardStyle = hover do
--- --   boxShadow (fromString "0 4px 8px rgba(0, 0, 0, 0.2)")
--- --   transform (scale 1.05)
 
 renderInventory :: Config -> Inventory -> Nut
 renderInventory config (Inventory items) = D.div
@@ -143,6 +113,6 @@ app = do
     void $ subscribe tickEvent \_ -> do
       fetchAndUpdateInventory
 
-  -- Run the UI
+  -- Run Deku UI
   void $ runInBody $ Deku.do
     D.div [] [ inventory <#~> renderInventory config ]
