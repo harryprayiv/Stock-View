@@ -3,10 +3,13 @@ module Render where
 import Prelude
 
 import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), QueryMode(..), fetchInventory)
-import CSS.Color (fromInt)
 import CSS.Color (Color) as CSS
+import CSS.Color (fromInt)
 import Data.Array (filter, sortBy)
 import Data.Either (Either(..))
+import Data.String (Pattern(..), replace, toLower)
+import Data.String.Pattern (Replacement(..))
+-- import Data.String.Utils (toCharArray)
 import Data.Tuple.Nested ((/\))
 import Deku.Core (Nut, text_)
 import Deku.DOM as D
@@ -77,13 +80,23 @@ renderInventory config (Inventory items) = D.div
 
 renderItem :: MenuItem -> Nut
 renderItem (MenuItem item) = D.div
-  [ klass_ "inventory-item-card" ]
+  [ klass_ ("inventory-item-card " <> generateClassName { category: item.category, subcategory: item.subcategory, species: item.species }) ]
   [ D.div [ klass_ "item-name" ] [ text_ ("'" <> item.name <> "'") ]
   , D.div [ klass_ "item-category" ] [ text_ (item.category <> " - " <> item.subcategory) ]
   , D.div [ klass_ "item-species" ] [ text_ ( item.species) ]
   , D.div [ klass_ "item-price" ] [ text_ ("$" <> show item.price) ]
-  , D.div [ klass_ "item-quantity" ] [ text_ ("In Stock: " <> show item.quantity) ]
+  , D.div [ klass_ "item-quantity" ] [ text_ ("qty:" <> show item.quantity) ]
   ]
+
+generateClassName :: { category :: String, subcategory :: String, species :: String } -> String
+generateClassName item =
+  "species-" <> toClassName item.species <> 
+  " category-" <> toClassName item.category <> 
+  " subcategory-" <> toClassName item.subcategory
+
+-- Helper function to convert strings to lowercase and replace spaces with hyphens
+toClassName :: String -> String
+toClassName str = toLower (replace (Pattern " ") (Replacement "-") str)
 
 app :: Effect Unit
 app = do
