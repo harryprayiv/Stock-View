@@ -1,19 +1,19 @@
 /* General layout remains the same */
 .inventory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-  padding: 3px;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 20px;
+  padding: 20px;
 }
 
 /* Individual item card styling */
 .inventory-item-card {
-  border: 1px solid #ccc;
+  border: .1px solid #7effad;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(232, 229, 229, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 2.2s, box-shadow 2.2s;
 
   min-height: 10vh;
   display: flex;
@@ -22,57 +22,83 @@
   text-align: left;
 }
 
-/* Dynamic species-specific styles */
-.species-indica {
-  border-left: 5px solid #b25fff; /* Green for Indica */
-}
-
-.species-sativa {
-  border-left: 5px solid #ff6600; /* Orange for Sativa */
-}
-
-.species-hybrid {
-  border-left: 5px solid #7db190; /* Blue for Hybrid */
-}
-
-/* Dynamic category-specific styles */
-.category-flower {
-  background-color: #a68888; /* Light grey for Flower */
-}
-
-.category-vape {
-  background-color: #64817ccf; /* Light orange for Vape */
-}
-
-/* Dynamic subcategory-specific styles */
-.subcategory-live-resin {
-  font-style: italic;
-}
-
-.subcategory-live-rosin {
-  font-weight: bold;
-}
-
 /* Text styling for inventory items */
 .item-name {
+  font-size: 12px;
+  text-align: left;
   font-weight: bold;
   color: rgb(217, 229, 146);
-  margin-bottom: 2px;
+  margin-bottom: 10px;
 }
 
 .item-price {
   font-weight: bold;
   color: rgb(120, 255, 165);
-  margin-bottom: 8px;
+  margin-bottom: 1px;
+  font-size: 12px;
 }
 
 .item-quantity {
-  font-weight: bold;
+  font-weight: italic;
   color: rgb(255, 255, 255);
-  margin-bottom: 8px;
+  margin-bottom: 1px;
+  font-size: 5px;
 }
 
-.item-category, .item-subcategory, .item-species, .item-price, .item-quantity {
-  margin: 1px 0;
-  font-size: calc(0.8vw + 0.8vh + 0.3vmin); /* Dynamic font size */
+.item-category {
+  /* color: rgba(238, 4, 4, 0.969); */
+  text-align: left;
+  font-size: 6px;
 }
+
+.item-subcategory {
+  color: rgb(255, 255, 255);
+  text-align: left;
+  font-size: 6px;
+}
+
+.item-species {
+  font-weight: bold;
+  color: rgb(255, 255, 255);
+  text-align: left;
+  font-size: 10px;
+  margin: 5px 0;
+}
+
+/* .item-category, .item-subcategory, .item-species, .item-price, .item-quantity {
+  margin: 20px 0;
+} */
+
+/* Dynamic species-specific styles */
+.species-indica {
+  border-left: 5px dashed #5f8fff; /* Green for Indica */
+}
+
+.species-sativa {
+  border-left: 5px dashed #ff8737; /* Orange for Sativa */
+}
+
+.species-hybrid {
+  border-left: 5px dashed #7db190; /* Blue for Hybrid */
+}
+
+/* Dynamic category-specific styles */
+.category-flower {
+  background-color: #ff9055; /* Light grey for Flower */
+}
+
+.category-vape {
+  background-color: #648174cf; /* Light orange for Vape */
+}
+
+
+/* Dynamic subcategory-specific styles */
+/* 
+.subcategory-live-resin {
+  font-size: 80x;
+}
+
+.subcategory-live-rosin {
+  font-size: 1px;
+} 
+*/
