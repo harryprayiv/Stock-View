@@ -102,7 +102,7 @@ app = do
   setInventory /\ inventory <- useState (Inventory [])
   let
     config =
-      { sortField: SortByCategory
+      { sortField: SortByQuantity
       , sortOrder: Descending
       , hideOutOfStock: true
       , mode: JsonMode
