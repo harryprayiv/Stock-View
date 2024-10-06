@@ -3,17 +3,16 @@ module Render where
 import Prelude
 
 import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), QueryMode(..), fetchInventory)
-import CSS.Color (Color) as CSS
-import CSS.Color (fromInt)
+import Control.Applicative (pure)
 import Data.Array (filter, sortBy)
 import Data.Either (Either(..))
+import Data.Functor.Variant (traverse)
 import Data.String (Pattern(..), replace, toLower)
 import Data.String.Pattern (Replacement(..))
--- import Data.String.Utils (toCharArray)
 import Data.Tuple.Nested ((/\))
-import Deku.Core (Nut, text_)
-import Deku.DOM as D
-import Deku.DOM.Attributes (klass_)
+import Deku.Core (Nut)
+import Deku.DOM.SVG as DS
+import Deku.DOM.SVG.Attributes as DSA
 import Deku.Effect (useState)
 import Deku.Hooks ((<#~>))
 import Deku.Toplevel (runInBody)
@@ -23,9 +22,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import FRP.Event (subscribe)
 import FRP.Event.Time (interval)
- 
-red:: CSS.Color
-red = fromInt 0xff0000
+import FRP.Poll (Poll)
 
 -- Sorting Configuration
 data SortField =  SortByName 
@@ -68,36 +65,56 @@ compareMenuItems config (MenuItem item1) (MenuItem item2) =
       Ascending -> baseComparison
       Descending -> invertOrdering baseComparison
 
+-- Define the size for SVG elements
+size :: Int
+size = 50
+
+-- Function to assign a shape (rect or circle) based on category
+renderShape :: MenuItem -> Nut
+renderShape (MenuItem item) =
+  case item.category of
+    "Flower" ->
+      DS.circle
+        [ DSA.cx_ "100"
+        , DSA.cy_ "100"
+        , DSA.r_ "50"
+        , DSA.fill_ "green"
+        ]
+        []
+    "Vape" ->
+      DS.rect
+        [ DSA.x_ "50"
+        , DSA.y_ "50"
+        , DSA.width_ "100"
+        , DSA.height_ "50"
+        , DSA.fill_ "blue"
+        ]
+        []
+    _ ->
+      DS.rect
+        [ DSA.x_ "50"
+        , DSA.y_ "50"
+        , DSA.width_ "50"
+        , DSA.height_ "50"
+        , DSA.fill_ "gray"
+        ]
+        []
+
 renderInventory :: Config -> Inventory -> Nut
-renderInventory config (Inventory items) = D.div
-  [ klass_ "inventory-grid" ]
-  (map renderItem sortedItems)
+renderInventory config (Inventory items) =
+  DS.svg
+    [ DSA.viewBox_ "0 0 600 600"
+    , DSA.width_ "600"
+    , DSA.height_ "600"
+    ]
+    (map renderShape sortedItems)
   where
     filteredItems = if config.hideOutOfStock
       then filter (\(MenuItem item) -> item.quantity > 0) items
       else items
     sortedItems = sortBy (compareMenuItems config) filteredItems
 
-renderItem :: MenuItem -> Nut
-renderItem (MenuItem item) = D.div
-  [ klass_ ("inventory-item-card " <> generateClassName { category: item.category, subcategory: item.subcategory, species: item.species }) ]
-  [ D.div [ klass_ "item-name" ] [ text_ ("'" <> item.name <> "'") ]
-  , D.div [ klass_ "item-category" ] [ text_ (item.category <> " - " <> item.subcategory) ]
-  , D.div [ klass_ "item-species" ] [ text_ ( item.species) ]
-  , D.div [ klass_ "item-price" ] [ text_ ("$" <> show item.price) ]
-  , D.div [ klass_ "item-quantity" ] [ text_ ("qty:" <> show item.quantity) ]
-  ]
-
-generateClassName :: { category :: String, subcategory :: String, species :: String } -> String
-generateClassName item =
-  "species-" <> toClassName item.species <> 
-  " category-" <> toClassName item.category <> 
-  " subcategory-" <> toClassName item.subcategory
-
--- Helper function to convert strings to lowercase and replace spaces with hyphens
-toClassName :: String -> String
-toClassName str = toLower (replace (Pattern " ") (Replacement "-") str)
-
+-- Main application
 app :: Effect Unit
 app = do
   setInventory /\ inventory <- useState (Inventory [])
@@ -122,10 +139,10 @@ app = do
   _ <- fetchAndUpdateInventory
 
   do
-    { event: tickEvent} <- interval config.refreshRate
+    { event: tickEvent } <- interval config.refreshRate
     void $ subscribe tickEvent \_ -> do
       fetchAndUpdateInventory
 
-  -- Run Deku UI
+  -- Run Deku UI with SVG rendering
   void $ runInBody $ Deku.do
-    D.div [] [ inventory <#~> renderInventory config ]
+    DS.svg [] [ inventory <#~> renderInventory config ]
