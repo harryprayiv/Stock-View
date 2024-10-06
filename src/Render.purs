@@ -5,10 +5,11 @@ import Prelude
 import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), QueryMode(..), fetchInventory)
 import Data.Array (filter, sortBy)
 import Data.Either (Either(..))
+import Data.Functor.Variant (traverse)
 import Data.String (Pattern(..), replace, toLower)
 import Data.String.Pattern (Replacement(..))
 import Data.Tuple.Nested ((/\))
-import Deku.Core (Nut)
+import Deku.Core (Nut, useRant)
 import Deku.DOM.SVG as DS
 import Deku.DOM.SVG.Attributes as DSA
 import Deku.Effect (useState)
@@ -18,8 +19,10 @@ import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import FRP.Event (subscribe)
+import FRP.Event (sampleOnRight, subscribe)
+import FRP.Event.AnimationFrame (animationFrame')
 import FRP.Event.Time (interval)
+import FRP.Poll (Poll, sham)
 
 -- Sorting Configuration
 data SortField = SortByName | SortByCategory | SortBySubCategory | SortBySpecies | SortBySKU | SortByPrice | SortByQuantity
@@ -56,45 +59,56 @@ compareMenuItems config (MenuItem item1) (MenuItem item2) =
       Ascending -> baseComparison
       Descending -> invertOrdering baseComparison
 
--- Function to assign a shape (rect or circle) based on category
-renderShape :: MenuItem -> Nut
-renderShape (MenuItem item) =
+renderShape :: MenuItem -> Poll Nut
+renderShape (MenuItem item) = do
+  -- Extract the event by binding to the effect??
+  frameData <- animationFrame'
+  let animEvent = frameData.event -- Error: Could not match type Record with type Effect
+
+  ticked <- useRant $ sampleOnRight animEvent (pure initialState)
+  
   case item.category of
-    "Flower" -> DS.circle
-      [ DSA.cx_ "100"
-      , DSA.cy_ "100"
-      , DSA.r_ "50"
+    "Flower" -> pure $ DS.circle
+      [ DSA.cx $ show <$> (_.positionX <$> ticked)  
+      , DSA.cy $ show <$> (_.positionY <$> ticked)  
+      , DSA.r $ show <$> (_.diameter <$> ticked)    
       , DSA.fill_ "green"
       ] []
-    "Concentrate" -> DS.rect
-      [ DSA.x_ "50"
-      , DSA.y_ "50"
-      , DSA.width_ "100"
-      , DSA.height_ "50"
+    "Concentrate" -> pure $ DS.rect
+      [ DSA.x $ show <$> (_.positionX <$> ticked)   
+      , DSA.y $ show <$> (_.positionY <$> ticked)   
+      , DSA.width $ show <$> (_.diameter <$> ticked) 
+      , DSA.height $ show <$> (_.diameter <$> ticked) 
       , DSA.fill_ "blue"
       ] []
-    _ -> DS.rect
-      [ DSA.x_ "50"
-      , DSA.y_ "50"
-      , DSA.width_ "50"
-      , DSA.height_ "50"
+    _ -> pure $ DS.rect
+      [ DSA.x $ show <$> (_.positionX <$> ticked)
+      , DSA.y $ show <$> (_.positionY <$> ticked)
+      , DSA.width $ show <$> (_.diameter <$> ticked)
+      , DSA.height $ show <$> (_.diameter <$> ticked)
       , DSA.fill_ "gray"
       ] []
+  where
+    -- Define initial state for `useRant`
+    initialState = 
+      { positionX: 100.0
+      , positionY: 100.0
+      , diameter: 50.0
+      }
 
--- Render the inventory as SVG shapes
-renderInventory :: Config -> Inventory -> Nut
-renderInventory config (Inventory items) =
-  DS.svg
-    [ DSA.viewBox_ "0 0 600 600"
-    , DSA.width_ "600"
-    , DSA.height_ "600"
-    ]
-    (map renderShape sortedItems)
+renderInventory :: Config -> Inventory -> Poll Nut
+renderInventory config (Inventory items) = do
+  viewBox <- DSA.viewBox_ "0 0 600 600"
+  width <- DSA.width_ "600"
+  height <- DSA.height_ "600"
+  shapes <- traverse renderShape sortedItems
+  pure $ DS.svg [viewBox, width, height] shapes
   where
     filteredItems = if config.hideOutOfStock
       then filter (\(MenuItem item) -> item.quantity > 0) items
       else items
     sortedItems = sortBy (compareMenuItems config) filteredItems
+
 
 -- Main application
 app :: Effect Unit
