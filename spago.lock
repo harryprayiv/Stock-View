@@ -693,7 +693,7 @@ workspace:
         - tuples
     hyrule:
       git: https://github.com/mikesol/purescript-hyrule.git
-      ref: a2a32e0
+      ref: a2a32e02a0d8518d906ec5fb3192261f63667338
       dependencies:
         - avar
         - effect
