@@ -70,6 +70,7 @@ size :: Int
 size = 50
 
 -- Function to assign a shape (rect or circle) based on category
+-- Function to assign a shape (rect or circle) based on category
 renderShape :: MenuItem -> Nut
 renderShape (MenuItem item) =
   case item.category of
@@ -99,6 +100,7 @@ renderShape (MenuItem item) =
         , DSA.fill_ "gray"
         ]
         []
+
 
 renderInventory :: Config -> Inventory -> Nut
 renderInventory config (Inventory items) =
