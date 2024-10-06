@@ -3,10 +3,8 @@ module Render where
 import Prelude
 
 import BudView (Inventory(..), InventoryResponse(..), MenuItem(..), QueryMode(..), fetchInventory)
-import Control.Applicative (pure)
 import Data.Array (filter, sortBy)
 import Data.Either (Either(..))
-import Data.Functor.Variant (traverse)
 import Data.String (Pattern(..), replace, toLower)
 import Data.String.Pattern (Replacement(..))
 import Data.Tuple.Nested ((/\))
@@ -22,16 +20,9 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import FRP.Event (subscribe)
 import FRP.Event.Time (interval)
-import FRP.Poll (Poll)
 
 -- Sorting Configuration
-data SortField =  SortByName 
-                | SortByCategory 
-                | SortBySubCategory 
-                | SortBySpecies
-                | SortBySKU
-                | SortByPrice 
-                | SortByQuantity
+data SortField = SortByName | SortByCategory | SortBySubCategory | SortBySpecies | SortBySKU | SortByPrice | SortByQuantity
 
 data SortOrder = Ascending | Descending
 
@@ -65,43 +56,32 @@ compareMenuItems config (MenuItem item1) (MenuItem item2) =
       Ascending -> baseComparison
       Descending -> invertOrdering baseComparison
 
--- Define the size for SVG elements
-size :: Int
-size = 50
-
--- Function to assign a shape (rect or circle) based on category
 -- Function to assign a shape (rect or circle) based on category
 renderShape :: MenuItem -> Nut
 renderShape (MenuItem item) =
   case item.category of
-    "Flower" ->
-      DS.circle
-        [ DSA.cx_ "100"
-        , DSA.cy_ "100"
-        , DSA.r_ "50"
-        , DSA.fill_ "green"
-        ]
-        []
-    "Vape" ->
-      DS.rect
-        [ DSA.x_ "50"
-        , DSA.y_ "50"
-        , DSA.width_ "100"
-        , DSA.height_ "50"
-        , DSA.fill_ "blue"
-        ]
-        []
-    _ ->
-      DS.rect
-        [ DSA.x_ "50"
-        , DSA.y_ "50"
-        , DSA.width_ "50"
-        , DSA.height_ "50"
-        , DSA.fill_ "gray"
-        ]
-        []
+    "Flower" -> DS.circle
+      [ DSA.cx_ "100"
+      , DSA.cy_ "100"
+      , DSA.r_ "50"
+      , DSA.fill_ "green"
+      ] []
+    "Concentrate" -> DS.rect
+      [ DSA.x_ "50"
+      , DSA.y_ "50"
+      , DSA.width_ "100"
+      , DSA.height_ "50"
+      , DSA.fill_ "blue"
+      ] []
+    _ -> DS.rect
+      [ DSA.x_ "50"
+      , DSA.y_ "50"
+      , DSA.width_ "50"
+      , DSA.height_ "50"
+      , DSA.fill_ "gray"
+      ] []
 
-
+-- Render the inventory as SVG shapes
 renderInventory :: Config -> Inventory -> Nut
 renderInventory config (Inventory items) =
   DS.svg
